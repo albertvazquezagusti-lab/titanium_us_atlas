@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Hispanic-Majority County Atlas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a working atlas. Controls in one row, map and ranking on the left, the selected county's profile on the right; stacks to one column on a phone. */
+:root{
+  --bg:#f5f7fa; --surface:#ffffff; --ink:#16202e; --ink-2:#4a5870; --ink-3:#7a869a;
+  --line:#dde3ec; --land:#e9edf3; --land-line:#ffffff; --accent:#1c5cab; --accent-soft:#e3eefc;
+  --r1:#b7d3f6; --r2:#6da7ec; --r3:#2a78d6; --r4:#1c5cab; --r5:#0d366b; --ring:#16202e;
+  --display:"Space Grotesk","Inter",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f141b; --surface:#171e28; --ink:#e8edf5; --ink-2:#a9b4c6; --ink-3:#7c889c;
+  --line:#2a3443; --land:#212a37; --land-line:#0f141b; --accent:#86b6ef; --accent-soft:#1b2a40;
+  --r1:#104281; --r2:#1c5cab; --r3:#3987e5; --r4:#86b6ef; --r5:#cde2fb; --ring:#e8edf5; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0f141b; --surface:#171e28; --ink:#e8edf5; --ink-2:#a9b4c6; --ink-3:#7c889c;
+  --line:#2a3443; --land:#212a37; --land-line:#0f141b; --accent:#86b6ef; --accent-soft:#1b2a40;
+  --r1:#104281; --r2:#1c5cab; --r3:#3987e5; --r4:#86b6ef; --r5:#cde2fb; --ring:#e8edf5; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:1280px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+header h1{font-family:var(--display);font-weight:600;font-size:26px;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--ink-2);max-width:70ch}
+.controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.eyebrow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;max-width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,select:focus-visible,.dot:focus-visible,.row:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.left{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.mapbox{position:relative;padding:0;overflow:hidden}
+#map{display:block;width:100%;height:auto;aspect-ratio:960/560;touch-action:none;cursor:grab}
+.state{fill:var(--land);stroke:var(--land-line);stroke-width:1;vector-effect:non-scaling-stroke}
+.dot{stroke:var(--ring);stroke-opacity:.55;cursor:pointer}
+.dot.sel{stroke-opacity:1}
+.lbl{fill:var(--ink);font-family:var(--body);font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-linejoin:round;pointer-events:none}
+.zoomer{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.zoomer button{width:34px;height:34px;padding:0;font-size:18px;line-height:1}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);max-width:220px;z-index:3}
+.tip b{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+.steps{display:flex;gap:2px;align-items:center}
+.steps i{display:block;width:26px;height:10px;border-radius:2px}
+.hint{color:var(--ink-3)}
+h2{font-family:var(--display);font-weight:600;font-size:16px;margin:0 0 2px}
+.sub{color:var(--ink-2);font-size:12px;margin:0 0 10px}
+.rank{display:flex;flex-direction:column;gap:2px}
+.row{display:grid;grid-template-columns:150px minmax(0,1fr) 92px;gap:10px;align-items:center;padding:4px 6px;border-radius:6px;border:0;background:none;text-align:left;width:100%}
+.row:hover,.row.sel{background:var(--accent-soft)}
+.row .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .track{height:10px}
+.row .bar{height:10px;border-radius:0 4px 4px 0;min-width:2px}
+.row .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+@media (max-width:480px){.row{grid-template-columns:110px minmax(0,1fr) 74px}}
+.detail{display:flex;flex-direction:column;gap:14px}
+.detail h2{font-size:20px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:0}
+.stats div{min-width:0}
+.stats dt{font-size:11px;color:var(--ink-3)}
+.stats dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.sec{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.ins{display:grid;grid-template-columns:minmax(0,1fr) 90px 38px;gap:8px;align-items:center;font-size:13px}
+.ins .bar{height:8px;border-radius:0 4px 4px 0;background:var(--r3)}
+.ins .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:13px}
+ul.plain li{display:flex;justify-content:space-between;gap:10px}
+ul.plain li span:last-child{font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap}
+details summary{cursor:pointer;color:var(--accent);font-weight:500}
+.notes{color:var(--ink-2);font-size:12px;max-width:95ch}
+.notes p{margin:0 0 6px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Hispanic-Majority County Atlas</h1>
+    <p>The 20 most populous US counties where Hispanic residents are a majority. Pick a measure to color the map, zoom into a cluster, and select a county for its payer mix and orthopedic hospitals and surgery centers.</p>
+  </header>
+
+  <div class="controls">
+    <div class="field"><label for="metric">Color counties by</label><select id="metric"></select></div>
+    <div class="field"><label for="size">Size circles by</label><select id="size"></select></div>
+    <div class="field"><span class="eyebrow">Zoom to</span>
+      <div class="chips" id="regions"></div></div>
+  </div>
+
+  <div class="grid">
+    <div class="left">
+      <div class="panel mapbox">
+        <svg id="map" viewBox="0 0 960 560" role="group" aria-label="Map of the 20 counties"></svg>
+        <div class="zoomer"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">&minus;</button></div>
+        <div class="tip" id="tip" hidden></div>
+        <div class="legend"><span id="legTitle"></span><span class="steps" id="legSteps"></span><span id="legSize"></span><span class="hint">Scroll or pinch to zoom, drag to pan.</span></div>
+      </div>
+      <div class="panel">
+        <h2 id="rankTitle"></h2>
+        <p class="sub" id="rankSub"></p>
+        <div class="rank" id="rank"></div>
+      </div>
+    </div>
+    <aside class="panel detail" id="detail"></aside>
+  </div>
+
+  <div class="notes">
+    <p><b>Sources.</b> Census QuickFacts (2025 population estimates, 2020&ndash;2024 American Community Survey); Census ACS 2024 one-year coverage tables; CMS Medicare Monthly Enrollment (July 2026); CMS Medicare Advantage enrollment by county and contract (October 2026); CMS Hospital General Information; CMS Provider of Services file (October 2026); CMS Medicare Inpatient Hospitals by Provider and Service; state Medicaid agency plan lists.</p>
+    <p><b>How to read the orthopedic measures.</b> A hospital counts as orthopedic if it had at least 11 traditional-Medicare inpatient discharges in an orthopedic surgical procedure group, so volumes are a floor and are lowest where Medicare Advantage is highest. A surgery center counts if CMS's certification record flags orthopedic surgery, which can be out of date. VA and military hospitals are not covered. Insurer shares group CMS legal entities by parent name and are approximate.</p>
+    <p>Circles sit at each county's main population center, not its geographic center.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.35.2/dist/plotly-geo-assets.js"></script>
+<script>
+const C=[
+{n:"Miami-Dade",s:"FL",lat:25.76,lon:-80.32,pop:2802029,chg:3.7,hisp:70.6,o65:18.3,inc:71753,pov:14.2,unins:15.3,mcare:16.8,mcaid:21.4,benes:525164,ma:75,hosp:20,asc:35,oh:8,oa:13,ffs:841,
+ ins:[["UnitedHealthcare",30],["Humana",26],["Elevance",16],["Leon Health",10]],mcd:"Sunshine Health, Humana, UnitedHealthcare (partial list)",
+ H:[["Jackson Health System",240],["Doctors Hospital, Coral Gables",153],["Mount Sinai Medical Center",126],["Baptist Hospital of Miami",110],["HCA Florida Aventura",104],["HCA Florida Kendall",51],["South Miami Hospital",35],["West Kendall Baptist",22]],
+ A:["Baptist Health Surgery Center at Coral Gables","Bayside Ambulatory Center","Coral Gables Surgery Center","The Gables Surgical Center","Key Biscayne Surgery Center","Miami Hand Center","Miami Regional Surgery Center","Miami Surgical Center","Miami Surgical Suites","Nicklaus Children's Ambulatory Surgery Center","South Florida Ambulatory Surgical Center","Surgery Center at Doral","Surgery Center of Aventura"]},
+{n:"Riverside",s:"CA",lat:33.80,lon:-117.05,pop:2544916,chg:5.2,hisp:53.0,o65:17.1,inc:93074,pov:9.8,unins:8.0,mcare:17.1,mcaid:30.1,benes:456485,ma:63,hosp:17,asc:62,oh:10,oa:18,ffs:1116,
+ ins:[["Kaiser",31],["SCAN",22],["UnitedHealthcare",13],["Alignment",7]],mcd:"Inland Empire Health Plan, Molina, Kaiser",
+ H:[["Eisenhower Medical Center",582],["Desert Regional Medical Center",188],["Riverside Community Hospital",126],["Rancho Springs Hospital",68],["Riverside University Health System",51],["Loma Linda University MC Murrieta",26],["Temecula Valley Hospital",26],["Corona Regional Medical Center",22],["John F Kennedy Memorial",16],["Hemet Global Medical Center",11]],
+ A:["Corona Summit Surgical Center","Desert Vein & Vascular Institute ASC","Eko Surgery Center","El Mirador Surgery Center","Glenwood Surgical Center","Golden Triangle Surgicenter","Hemet Healthcare Surgicenter","Highland Springs Surgery Center","Inland Empire Minimally Invasive Surgery Institute","Palm Valley Surgical Center","Rancho Mirage Surgery Center","Riverside Medical Clinic Surgery Center (two sites)","Riverside Outpatient Surgical Institute","Temecula Valley Day Surgery","The Oaks Surgery Center","West Coast Surgery","Zahra Surgery Center"]},
+{n:"San Bernardino",s:"CA",lat:34.28,lon:-117.40,pop:2224091,chg:1.9,hisp:56.9,o65:14.6,inc:85478,pov:12.6,unins:8.1,mcare:14.2,mcaid:33.7,benes:350944,ma:67,hosp:22,asc:36,oh:9,oa:10,ffs:357,
+ ins:[["Kaiser",35],["SCAN",17],["UnitedHealthcare",15],["Inland Empire Health Plan",8]],mcd:"Inland Empire Health Plan, Molina, Kaiser",
+ H:[["Loma Linda University Medical Center",112],["Redlands Community Hospital",64],["San Antonio Regional Hospital",51],["Providence St Mary Medical Center",40],["Victor Valley Global Medical Center",27],["Desert Valley Hospital",22],["Kaiser Fontana/Ontario",15],["Arrowhead Regional Medical Center",15],["Chino Valley Medical Center",11]],
+ A:["Advanced Ambulatory Surgery Center","Inland Surgery Center","Loma Linda Surgical Institute","Merit Surgery Center","Ontario Advanced Surgery Center","Physician's Surgery Center","Premier Outpatient Surgery Center","San Antonio Ambulatory Surgical Center","Seven Oaks Surgery Center","St John Surgery Center"]},
+{n:"Bexar",s:"TX",lat:29.45,lon:-98.50,pop:2160088,chg:7.5,hisp:60.7,o65:14.3,inc:72341,pov:14.6,unins:18.1,mcare:14.8,mcaid:17.6,benes:342685,ma:59,hosp:20,asc:50,oh:8,oa:23,ffs:2715,
+ ins:[["UnitedHealthcare",47],["Humana",28],["HCSC",8],["Aetna",5]],mcd:"Aetna, Community First, Superior, Wellpoint",
+ H:[["Methodist Hospital",790],["Baptist Medical Center",582],["Methodist Hospital Stone Oak",507],["South Texas Spine and Surgical Hospital",353],["Christus Santa Rosa Medical Center",226],["University Health System",191],["Legent Orthopedic + Spine",46],["Foundation Surgical Hospital",20]],
+ A:["Advanced Surgery Center of San Antonio","Centrum Surgery Center","Christus Orthopedic San Antonio Surgery Center","Christus Santa Rosa PASC","Christus Santa Rosa Physicians ASC Stone Oak","Christus Surgery Center","Cibolo Creek Surgery Center","Comfort Surgery Center","First Choice Ambulatory Surgical Center","Huebner Ambulatory Surgery Center","MARC ASC","Methodist Ambulatory Surgery Center","Methodist ASC Landmark","Methodist Ambulatory Surgery Medical Center","Methodist Surgery Center Texas Center for Athletes","Ridgewood Orthopaedic Surgery Center (two sites)","South Texas Surgical Institute","St. Raphael's Surgery Center","Stone Oak Surgery Center","Texas Spine and Joint Surgical Center","UT Health KSP ASC","Westover Hills Surgery Center"]},
+{n:"Bronx",s:"NY",lat:40.85,lon:-73.87,pop:1406332,chg:-4.5,hisp:57.0,o65:15.7,inc:48676,pov:28.7,unins:8.1,mcare:17.2,mcaid:55.9,benes:234467,ma:71,hosp:7,asc:9,oh:2,oa:4,ffs:465,
+ ins:[["Healthfirst",51],["Aetna",12],["VNS Health",8],["UnitedHealthcare",7]],mcd:"Not confirmed",
+ H:[["Montefiore Medical Center",399],["Jacobi Medical Center",66]],
+ A:["AMSC","Avicenna ASC","East Tremont Ambulatory Surgery Center","Empire State Ambulatory Surgery Center"]},
+{n:"Fresno",s:"CA",lat:36.75,lon:-119.78,pop:1035456,chg:2.7,hisp:55.7,o65:14.6,inc:74201,pov:18.2,unins:7.5,mcare:14.3,mcaid:40.6,benes:161815,ma:49,hosp:8,asc:24,oh:4,oa:4,ffs:983,
+ ins:[["Kaiser",29],["Alignment",24],["Elevance",15],["Humana",7]],mcd:"CalViva, Anthem, Kaiser",
+ H:[["Fresno Surgical Hospital",376],["Saint Agnes Medical Center",240],["Community Regional Medical Center",201],["Clovis Community Medical Center",166]],
+ A:["Kaizen Surgery Center","North Point Surgery Center","Regional Hand Center of Central California","Summit Surgical"]},
+{n:"Kern",s:"CA",lat:35.37,lon:-119.02,pop:927068,chg:2.0,hisp:58.3,o65:13.4,inc:70210,pov:18.6,unins:8.6,mcare:13.5,mcaid:42.0,benes:135793,ma:48,hosp:10,asc:26,oh:3,oa:8,ffs:248,
+ ins:[["Kaiser",32],["Elevance",22],["Humana",10],["UnitedHealthcare",9]],mcd:"Kern Health Systems, Anthem, Kaiser",
+ H:[["Mercy Hospital",92],["Adventist Health Bakersfield",82],["Bakersfield Memorial Hospital",74]],
+ A:["Bahamas Surgery Center","Bakersfield Specialists Surgical Center","Central Valley Surgery Center, Inc","Central Valley Surgical Center, LLC","Kern Medical Surgery Center","Millennium Surgery Center","Oaks Surgical Center","Sillect Surgery Group"]},
+{n:"Hidalgo",s:"TX",lat:26.25,lon:-98.20,pop:921549,chg:5.8,hisp:92.1,o65:12.9,inc:54338,pov:24.2,unins:26.7,mcare:12.9,mcaid:25.4,benes:126045,ma:78,hosp:7,asc:8,oh:3,oa:3,ffs:71,
+ ins:[["UnitedHealthcare",30],["HCSC",28],["Prominence",14],["Humana",11]],mcd:"Driscoll, Molina, Superior, UnitedHealthcare",
+ H:[["Doctors Hospital at Renaissance",33],["South Texas Health System",24],["Knapp Medical Center",14]],
+ A:["Dove Pointe ASC","UT Health RGV Surgery Center","Valley Ambulatory Surgical Center"]},
+{n:"El Paso",s:"TX",lat:31.76,lon:-106.42,pop:877858,chg:1.4,hisp:82.8,o65:15.6,inc:59806,pov:18.1,unins:23.7,mcare:14.9,mcaid:19.6,benes:154555,ma:74,hosp:12,asc:11,oh:4,oa:4,ffs:266,
+ ins:[["UnitedHealthcare",38],["Humana",24],["HCSC",14],["Alignment",9]],mcd:"El Paso Health, Molina, Superior",
+ H:[["Las Palmas Medical Center",112],["University Medical Center of El Paso",62],["Sierra Medical Center",57],["Hospitals of Providence East",35]],
+ A:["El Paso Day Surgery","Paso del Norte Surgery Center","Texan Procedure Center","West El Paso Surgical Center"]},
+{n:"Stanislaus",s:"CA",lat:37.64,lon:-121.00,pop:557719,chg:0.8,hisp:52.1,o65:15.6,inc:81468,pov:14.2,unins:6.6,mcare:14.8,mcaid:33.9,benes:96830,ma:58,hosp:5,asc:13,oh:3,oa:5,ffs:428,
+ ins:[["Alignment",32],["Kaiser",31],["SCAN",13],["Imperial Health Plan",8]],mcd:"Health Net, Health Plan of San Joaquin, Kaiser",
+ H:[["Memorial Medical Center",251],["Doctors Medical Center",121],["Emanuel Medical Center",56]],
+ A:["Coffee Road Surgery Center","Northern California Surgery Center","River Surgical Institute","Tower Health and Wellness Surgery Center","Valley Surgery Center"]},
+{n:"Tulare",s:"CA",lat:36.33,lon:-119.29,pop:485146,chg:2.5,hisp:68.2,o65:13.5,inc:71300,pov:19.9,unins:8.6,mcare:14.0,mcaid:44.8,benes:71443,ma:37,hosp:4,asc:10,oh:2,oa:1,ffs:239,
+ ins:[["Humana",33],["Elevance",25],["Centene",17],["UnitedHealthcare",7]],mcd:"Anthem, Health Net, Kaiser",
+ H:[["Kaweah Health Medical Center",226],["Sierra View Medical Center",13]],A:["Sequoia Surgery Center"]},
+{n:"Osceola",s:"FL",lat:28.29,lon:-81.41,pop:481718,chg:23.9,hisp:58.2,o65:14.5,inc:72637,pov:13.0,unins:14.1,mcare:13.8,mcaid:18.8,benes:76825,ma:72,hosp:4,asc:6,oh:1,oa:2,ffs:83,
+ ins:[["Humana",41],["Elevance",22],["UnitedHealthcare",17],["Devoted",6]],mcd:"Sunshine Health, Humana (partial list)",
+ H:[["HCA Florida Osceola Hospital",83]],A:["Celebration Ambulatory Surgical Center","Kissimmee Surgery Center"]},
+{n:"Cameron",s:"TX",lat:26.10,lon:-97.55,pop:433946,chg:3.0,hisp:89.3,o65:15.7,inc:52601,pov:24.3,unins:26.6,mcare:15.1,mcaid:24.9,benes:73647,ma:75,hosp:6,asc:6,oh:2,oa:1,ffs:87,
+ ins:[["UnitedHealthcare",35],["HCSC",33],["Humana",11],["Prominence",8]],mcd:"Driscoll, Molina, Superior, UnitedHealthcare",
+ H:[["Valley Baptist Medical Center Harlingen",65],["Harlingen Medical Center",22]],A:["SportsOrtho Surgery Center"]},
+{n:"Monterey",s:"CA",lat:36.62,lon:-121.65,pop:433729,chg:-1.7,hisp:62.9,o65:16.5,inc:97230,pov:13.7,unins:9.3,mcare:16.7,mcaid:35.8,benes:75137,ma:17,hosp:4,asc:10,oh:3,oa:4,ffs:446,
+ ins:[["Aspire Health Plan",68],["UnitedHealthcare",8],["Imperial Health Plan",6],["Elevance",5]],mcd:"Central California Alliance for Health",
+ H:[["Community Hospital of the Monterey Peninsula",337],["Natividad Medical Center",77],["Salinas Valley Health Medical Center",32]],
+ A:["Monterey Peninsula Surgery Center","Monterey Peninsula Surgery Center Munras Avenue","Monterey Peninsula Surgery Center Ryan Ranch","Salinas Surgery Center"]},
+{n:"Nueces",s:"TX",lat:27.78,lon:-97.42,pop:352992,chg:-0.1,hisp:63.9,o65:17.7,inc:66897,pov:15.3,unins:19.1,mcare:18.2,mcaid:20.4,benes:67729,ma:65,hosp:4,asc:9,oh:2,oa:2,ffs:297,
+ ins:[["UnitedHealthcare",60],["Humana",28],["HCSC",4],["Aetna",3]],mcd:"Driscoll, Superior, UnitedHealthcare",
+ H:[["Christus Spohn Hospital Corpus Christi",203],["Corpus Christi Medical Center",94]],
+ A:["Christus Spohn Texas Orthopedic Center of Excellence","Texas Precision Surgery Center"]},
+{n:"Merced",s:"CA",lat:37.30,lon:-120.48,pop:297260,chg:5.2,hisp:64.9,o65:13.1,inc:65510,pov:18.4,unins:8.5,mcare:14.0,mcaid:43.5,benes:43965,ma:30,hosp:2,asc:5,oh:1,oa:1,ffs:60,
+ ins:[["Imperial Health Plan",38],["Alignment",27],["UnitedHealthcare",19],["Blue Shield of California",9]],mcd:"Central California Alliance for Health",
+ H:[["Mercy Medical Center",60]],A:["University Surgery Center"]},
+{n:"Webb",s:"TX",lat:27.52,lon:-99.49,pop:281224,chg:5.3,hisp:94.7,o65:11.3,inc:63058,pov:20.6,unins:26.2,mcare:10.5,mcaid:26.1,benes:39436,ma:65,hosp:2,asc:3,oh:1,oa:0,ffs:36,
+ ins:[["UnitedHealthcare",52],["Humana",14],["HCSC",13],["Prominence",10]],mcd:"Driscoll, Molina, Superior, UnitedHealthcare",
+ H:[["Laredo Medical Center",36]],A:[]},
+{n:"Yakima",s:"WA",lat:46.60,lon:-120.51,pop:259185,chg:1.0,hisp:54.6,o65:15.9,inc:70656,pov:16.7,unins:15.3,mcare:16.6,mcaid:38.4,benes:46979,ma:47,hosp:3,asc:4,oh:1,oa:1,ffs:111,
+ ins:[["UnitedHealthcare",59],["Centene",18],["Community Health Plan of Washington",12],["Regence",6]],mcd:"Not confirmed",
+ H:[["Yakima Valley Memorial",111]],A:["MultiCare Yakima Ambulatory Surgery Center"]},
+{n:"Doña Ana",s:"NM",lat:32.32,lon:-106.77,pop:229091,chg:4.3,hisp:68.3,o65:19.4,inc:56848,pov:17.9,unins:14.5,mcare:18.8,mcaid:36.4,benes:49328,ma:55,hosp:5,asc:5,oh:3,oa:1,ffs:162,
+ ins:[["UnitedHealthcare",68],["Humana",11],["HCSC",10],["Presbyterian",5]],mcd:"Blue Cross Blue Shield of New Mexico, Molina, Presbyterian, UnitedHealthcare",
+ H:[["Three Crosses Regional Hospital",68],["Mountain View Regional Medical Center",50],["Memorial Medical Center",44]],A:["Mountainview Surgery Center"]},
+{n:"Yuma",s:"AZ",lat:32.69,lon:-114.62,pop:224449,chg:9.5,hisp:66.8,o65:20.7,inc:62876,pov:16.6,unins:15.3,mcare:26.4,mcaid:29.3,benes:46553,ma:52,hosp:2,asc:4,oh:1,oa:1,ffs:101,
+ ins:[["Centene",34],["Humana",26],["UnitedHealthcare",21],["Banner",12]],mcd:"Arizona Complete Health, Banner University Family Care",
+ H:[["Yuma Regional Medical Center",101]],A:["Yuma Advanced Surgical Suites"]}
+];
+C.forEach((d,i)=>{d.id=i;d.sites=d.oh+d.oa;d.bps=d.benes/d.sites;d.pps=d.pop/d.sites;d.a100=d.oa/d.pop*1e5;});
+
+const num=d3.format(","),k0=v=>num(Math.round(v)),pct=v=>v.toFixed(1)+"%",usd=v=>"$"+num(v);
+const METRICS=[
+ {k:"bps",l:"Medicare beneficiaries per orthopedic site",f:k0,note:"Medicare enrollees divided by hospitals and surgery centers with orthopedic surgery. Higher means more patients per site."},
+ {k:"pps",l:"Residents per orthopedic site",f:k0,note:"Total residents divided by hospitals and surgery centers with orthopedic surgery. Higher means thinner supply."},
+ {k:"a100",l:"Orthopedic surgery centers per 100,000 residents",f:v=>v.toFixed(2),note:"Surgery centers CMS flags for orthopedic surgery, per 100,000 residents."},
+ {k:"benes",l:"Medicare beneficiaries",f:num,note:"People enrolled in Medicare, July 2026."},
+ {k:"ma",l:"Medicare Advantage share of Medicare",f:v=>v+"%",note:"Share of Medicare enrollees in a private Medicare Advantage plan."},
+ {k:"mcaid",l:"Residents on Medicaid",f:pct,note:"Share of all residents with Medicaid coverage, 2024."},
+ {k:"mcare",l:"Residents on Medicare",f:pct,note:"Share of all residents with Medicare coverage, 2024 survey."},
+ {k:"unins",l:"Uninsured, under 65",f:pct,note:"Share of residents under 65 without health insurance."},
+ {k:"o65",l:"Residents 65 and older",f:pct,note:"Share of residents aged 65 or older."},
+ {k:"hisp",l:"Hispanic share of population",f:pct,note:"Hispanic or Latino residents as a share of the total, 2025 estimate."},
+ {k:"inc",l:"Median household income",f:usd,note:"Median household income, 2020 to 2024, in 2024 dollars."},
+ {k:"pov",l:"Poverty rate",f:pct,note:"Share of residents below the poverty line."},
+ {k:"chg",l:"Population change since 2020",f:v=>(v>0?"+":"")+v.toFixed(1)+"%",note:"Change from April 2020 to July 2025."}
+];
+const SIZES=[{k:"pop",l:"Population"},{k:"benes",l:"Medicare beneficiaries"},{k:"sites",l:"Orthopedic sites"}];
+const REGIONS=[{l:"All",b:null},{l:"California",b:[[-122.6,38.2],[-114.2,32.3]]},{l:"Texas and New Mexico",b:[[-107.6,33.0],[-96.6,25.6]]},{l:"South Texas",b:[[-100.3,30.0],[-96.9,25.7]]},{l:"Florida",b:[[-83.2,29.2],[-79.6,25.0]]},{l:"Bronx",b:[[-75.2,41.6],[-72.6,40.2]]},{l:"Yakima",b:[[-122.5,47.5],[-118.5,45.7]]}];
+
+let metric=METRICS[0],sizeK="pop",sel=3,k=1;
+const W=960,H=560,svg=d3.select("#map"),g=svg.append("g");
+const proj=d3.geoAlbersUsa().scale(1180).translate([W/2,H/2]);
+try{
+  const T=window.PlotlyGeoAssets&&PlotlyGeoAssets.topojson;const topo=T&&(T.usa_50m||T.usa_110m);
+  if(topo){const ob=topo.objects.subunits||topo.objects.land;const fc=topojson.feature(topo,ob);
+    proj.fitExtent([[12,12],[W-12,H-12]],fc);
+    g.append("g").selectAll("path").data(fc.features||[fc]).join("path").attr("class","state").attr("d",d3.geoPath(proj));}
+}catch(e){}
+C.forEach(d=>{const p=proj([d.lon,d.lat])||[W/2,H/2];d.x=p[0];d.y=p[1];});
+
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const ramp=["--r1","--r2","--r3","--r4","--r5"];
+let qs;function bucket(v){return qs(v);}
+const dots=g.append("g"),labels=g.append("g");
+const dot=dots.selectAll("circle").data(C).join("circle").attr("class","dot").attr("cx",d=>d.x).attr("cy",d=>d.y)
+  .attr("tabindex",0).attr("role","button").attr("aria-label",d=>d.n+" County, "+d.s)
+  .on("click",(e,d)=>pick(d.id)).on("keydown",(e,d)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick(d.id);}})
+  .on("pointermove",(e,d)=>showTip(e,d)).on("pointerleave",()=>{tip.hidden=true;hover=null;restyle();});
+const lbl=labels.selectAll("text").data(C).join("text").attr("class","lbl").text(d=>d.n);
+const tip=document.getElementById("tip");let hover=null;
+function showTip(e,d){hover=d.id;restyle();const r=document.querySelector(".mapbox").getBoundingClientRect();
+  tip.innerHTML="<b>"+d.n+", "+d.s+"</b>"+metric.l+": "+metric.f(d[metric.k]);tip.hidden=false;
+  let x=e.clientX-r.left+14,y=e.clientY-r.top+14;if(x>r.width-230)x=Math.max(8,x-250);tip.style.left=x+"px";tip.style.top=y+"px";}
+
+let rs;
+function restyle(){
+  dot.attr("r",d=>rs(d[sizeK])/k).attr("stroke-width",d=>(d.id===sel?2.5:1)/k).classed("sel",d=>d.id===sel)
+     .attr("fill",d=>"var("+ramp[bucket(d[metric.k])]+")");
+  lbl.attr("font-size",12/k).attr("stroke-width",3/k).attr("x",d=>d.x+(rs(d[sizeK])+4)/k).attr("y",d=>d.y+4/k)
+     .attr("hidden",d=>(k>=2.4||d.id===sel||d.id===hover)?null:"");
+}
+function render(){
+  const vals=C.map(d=>d[metric.k]);qs=d3.scaleQuantize().domain(d3.extent(vals)).range([0,1,2,3,4]);
+  rs=d3.scaleSqrt().domain([0,d3.max(C,d=>d[sizeK])]).range([4,26]);
+  dot.sort((a,b)=>b[sizeK]-a[sizeK]);restyle();
+  const th=qs.thresholds(),ex=d3.extent(vals);
+  document.getElementById("legTitle").textContent=metric.l+": "+metric.f(ex[0])+" to "+metric.f(ex[1]);
+  document.getElementById("legSteps").innerHTML="low "+ramp.map(r=>'<i style="background:var('+r+')"></i>').join("")+" high";
+  document.getElementById("legSize").textContent="Circle area: "+SIZES.find(s=>s.k===sizeK).l.toLowerCase();
+  document.getElementById("rankTitle").textContent=metric.l;
+  document.getElementById("rankSub").textContent=metric.note;
+  const mx=d3.max(vals.map(Math.abs)),sorted=[...C].sort((a,b)=>b[metric.k]-a[metric.k]);
+  const rk=d3.select("#rank").selectAll("button").data(sorted,d=>d.id).join("button").attr("class","row").attr("id",d=>"row"+d.id).order()
+    .classed("sel",d=>d.id===sel).on("click",(e,d)=>pick(d.id,true));
+  rk.html(d=>'<span class="nm">'+d.n+", "+d.s+'</span><span class="track"><span class="bar" style="display:block;width:'+Math.max(1,Math.abs(d[metric.k])/mx*100)+'%;background:var('+ramp[bucket(d[metric.k])]+')"></span></span><span class="val">'+metric.f(d[metric.k])+"</span>");
+  detail();
+}
+function detail(){
+  const d=C[sel],rank=[...C].sort((a,b)=>b[metric.k]-a[metric.k]).findIndex(x=>x.id===sel)+1;
+  const st=[["Population",num(d.pop)],["Hispanic share",pct(d.hisp)],["65 and older",pct(d.o65)],["Median household income",usd(d.inc)],["Poverty rate",pct(d.pov)],["Uninsured, under 65",pct(d.unins)],["On Medicare",pct(d.mcare)],["On Medicaid",pct(d.mcaid)],["Medicare beneficiaries",num(d.benes)],["Medicare Advantage share",d.ma+"%"]];
+  const sup=[["Hospitals with orthopedic surgery",d.oh+" of "+d.hosp],["Surgery centers with orthopedic surgery",d.oa+" of "+d.asc],["Medicare beneficiaries per orthopedic site",k0(d.bps)],["Traditional-Medicare orthopedic surgical discharges",num(d.ffs)]];
+  const dl=a=>'<dl class="stats">'+a.map(x=>"<div><dt>"+x[0]+"</dt><dd>"+x[1]+"</dd></div>").join("")+"</dl>";
+  document.getElementById("detail").innerHTML=
+   '<div><span class="eyebrow">Selected county</span><h2>'+d.n+" County, "+d.s+'</h2><p class="sub" style="margin:0">Ranks '+rank+" of 20 on "+metric.l.toLowerCase()+" ("+metric.f(d[metric.k])+").</p></div>"+dl(st)+
+   '<div class="sec"><span class="eyebrow">Orthopedic supply</span>'+dl(sup)+"</div>"+
+   '<div class="sec"><span class="eyebrow">Medicare Advantage insurers, share of enrollment</span>'+d.ins.map(x=>'<div class="ins"><span>'+x[0]+'</span><span><span class="bar" style="display:block;width:'+x[1]/68*100+'%"></span></span><span class="v">'+x[1]+"%</span></div>").join("")+"</div>"+
+   '<div class="sec"><span class="eyebrow">Medicaid managed care plans</span><div>'+d.mcd+"</div></div>"+
+   '<div class="sec"><span class="eyebrow">Hospitals, by Medicare orthopedic surgical discharges</span><ul class="plain">'+d.H.map(x=>"<li><span>"+x[0]+"</span><span>"+num(x[1])+"</span></li>").join("")+"</ul></div>"+
+   '<div class="sec"><span class="eyebrow">Surgery centers flagged for orthopedics</span>'+(d.A.length?'<details id="ascd"'+(d.A.length<=6?" open":"")+"><summary>"+d.oa+' centers</summary><ul class="plain" style="margin-top:6px">'+d.A.map(x=>"<li><span>"+x+"</span></li>").join("")+"</ul></details>":"<div>None on file.</div>")+"</div>";
+}
+function pick(id,fly){sel=id;restyle();d3.selectAll("#rank .row").classed("sel",d=>d.id===sel);detail();
+  if(fly){const d=C[id];svg.transition().duration(600).call(zoom.transform,d3.zoomIdentity.translate(W/2,H/2).scale(Math.max(k,5)).translate(-d.x,-d.y));}}
+
+const zoom=d3.zoom().scaleExtent([1,60]).translateExtent([[-200,-200],[W+200,H+200]]).on("zoom",e=>{g.attr("transform",e.transform);k=e.transform.k;restyle();})
+  .on("start",()=>svg.style("cursor","grabbing")).on("end",()=>svg.style("cursor","grab"));
+svg.call(zoom);
+document.getElementById("zin").onclick=()=>svg.transition().duration(250).call(zoom.scaleBy,1.7);
+document.getElementById("zout").onclick=()=>svg.transition().duration(250).call(zoom.scaleBy,1/1.7);
+function region(b){if(!b){svg.transition().duration(600).call(zoom.transform,d3.zoomIdentity);return;}
+  const a=proj(b[0]),c=proj(b[1]);if(!a||!c)return;const dx=Math.abs(c[0]-a[0]),dy=Math.abs(c[1]-a[1]),s=Math.min(60,0.9/Math.max(dx/W,dy/H));
+  svg.transition().duration(700).call(zoom.transform,d3.zoomIdentity.translate(W/2,H/2).scale(s).translate(-(a[0]+c[0])/2,-(a[1]+c[1])/2));}
+d3.select("#regions").selectAll("button").data(REGIONS).join("button").text(d=>d.l).on("click",(e,d)=>region(d.b));
+const ms=document.getElementById("metric"),ss=document.getElementById("size");
+METRICS.forEach((m,i)=>ms.add(new Option(m.l,i)));SIZES.forEach(s=>ss.add(new Option(s.l,s.k)));
+ms.onchange=()=>{metric=METRICS[+ms.value];render();};ss.onchange=()=>{sizeK=ss.value;render();};
+render();
+</script>
+
+</body>
+</html>
