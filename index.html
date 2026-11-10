@@ -27,6 +27,9 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14p
 .wrap{max-width:1280px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
 header h1{font-family:var(--display);font-weight:600;font-size:26px;margin:0;text-wrap:balance}
 header p{margin:4px 0 0;color:var(--ink-2);max-width:70ch}
+.top{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center}
+.lang{display:flex;gap:4px}
+.lang button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
 .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field label,.eyebrow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
@@ -85,14 +88,14 @@ details summary{cursor:pointer;color:var(--accent);font-weight:500}
 
 <div class="wrap">
   <header>
-    <h1>Hispanic-Majority County Atlas</h1>
-    <p>The 20 most populous US counties where Hispanic residents are a majority. Pick a measure to color the map, zoom into a cluster, and select a county for its payer mix and orthopedic hospitals and surgery centers.</p>
+    <div class="top"><h1 data-i18n="title">Hispanic-Majority County Atlas</h1><div class="lang" role="group" aria-label="Language / Idioma"><button id="lang-en" lang="en">English</button><button id="lang-es" lang="es">Español</button></div></div>
+    <p data-i18n="intro">The 20 most populous US counties where Hispanic residents are a majority. Pick a measure to color the map, zoom into a cluster, and select a county for its payer mix and orthopedic hospitals and surgery centers.</p>
   </header>
 
   <div class="controls">
-    <div class="field"><label for="metric">Color counties by</label><select id="metric"></select></div>
-    <div class="field"><label for="size">Size circles by</label><select id="size"></select></div>
-    <div class="field"><span class="eyebrow">Zoom to</span>
+    <div class="field"><label for="metric" data-i18n="colorBy">Color counties by</label><select id="metric"></select></div>
+    <div class="field"><label for="size" data-i18n="sizeBy">Size circles by</label><select id="size"></select></div>
+    <div class="field"><span class="eyebrow" data-i18n="zoomTo">Zoom to</span>
       <div class="chips" id="regions"></div></div>
   </div>
 
@@ -102,7 +105,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:500}
         <svg id="map" viewBox="0 0 960 560" role="group" aria-label="Map of the 20 counties"></svg>
         <div class="zoomer"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">&minus;</button></div>
         <div class="tip" id="tip" hidden></div>
-        <div class="legend"><span id="legTitle"></span><span class="steps" id="legSteps"></span><span id="legSize"></span><span class="hint">Scroll or pinch to zoom, drag to pan.</span></div>
+        <div class="legend"><span id="legTitle"></span><span class="steps" id="legSteps"></span><span id="legSize"></span><span class="hint" data-i18n="hint">Scroll or pinch to zoom, drag to pan.</span></div>
       </div>
       <div class="panel">
         <h2 id="rankTitle"></h2>
@@ -114,9 +117,9 @@ details summary{cursor:pointer;color:var(--accent);font-weight:500}
   </div>
 
   <div class="notes">
-    <p><b>Sources.</b> Census QuickFacts (2025 population estimates, 2020&ndash;2024 American Community Survey); Census ACS 2024 one-year coverage tables; CMS Medicare Monthly Enrollment (July 2026); CMS Medicare Advantage enrollment by county and contract (October 2026); CMS Hospital General Information; CMS Provider of Services file (October 2026); CMS Medicare Inpatient Hospitals by Provider and Service; state Medicaid agency plan lists.</p>
-    <p><b>How to read the orthopedic measures.</b> A hospital counts as orthopedic if it had at least 11 traditional-Medicare inpatient discharges in an orthopedic surgical procedure group, so volumes are a floor and are lowest where Medicare Advantage is highest. A surgery center counts if CMS's certification record flags orthopedic surgery, which can be out of date. VA and military hospitals are not covered. Insurer shares group CMS legal entities by parent name and are approximate.</p>
-    <p>Circles sit at each county's main population center, not its geographic center.</p>
+    <p data-i18n="note1"><b>Sources.</b> Census QuickFacts (2025 population estimates, 2020&ndash;2024 American Community Survey); Census ACS 2024 one-year coverage tables; CMS Medicare Monthly Enrollment (July 2026); CMS Medicare Advantage enrollment by county and contract (October 2026); CMS Hospital General Information; CMS Provider of Services file (October 2026); CMS Medicare Inpatient Hospitals by Provider and Service; state Medicaid agency plan lists.</p>
+    <p data-i18n="note2"><b>How to read the orthopedic measures.</b> A hospital counts as orthopedic if it had at least 11 traditional-Medicare inpatient discharges in an orthopedic surgical procedure group, so volumes are a floor and are lowest where Medicare Advantage is highest. A surgery center counts if CMS's certification record flags orthopedic surgery, which can be out of date. VA and military hospitals are not covered. Insurer shares group CMS legal entities by parent name and are approximate.</p>
+    <p data-i18n="note3">Circles sit at each county's main population center, not its geographic center.</p>
   </div>
 </div>
 
@@ -219,6 +222,39 @@ const METRICS=[
 const SIZES=[{k:"pop",l:"Population"},{k:"benes",l:"Medicare beneficiaries"},{k:"sites",l:"Orthopedic sites"}];
 const REGIONS=[{l:"All",b:null},{l:"California",b:[[-122.6,38.2],[-114.2,32.3]]},{l:"Texas and New Mexico",b:[[-107.6,33.0],[-96.6,25.6]]},{l:"South Texas",b:[[-100.3,30.0],[-96.9,25.7]]},{l:"Florida",b:[[-83.2,29.2],[-79.6,25.0]]},{l:"Bronx",b:[[-75.2,41.6],[-72.6,40.2]]},{l:"Yakima",b:[[-122.5,47.5],[-118.5,45.7]]}];
 
+const L={en:{title:"Hispanic-Majority County Atlas",colorBy:"Color counties by",sizeBy:"Size circles by",zoomTo:"Zoom to",to:"to",low:"low",high:"high",circle:"Circle area: ",
+ selected:"Selected county",ranks:(r,m,v)=>"Ranks "+r+" of 20 on "+m+" ("+v+").",county:(n,s)=>n+" County, "+s,of:"of",
+ st:["Population","Hispanic share","65 and older","Median household income","Poverty rate","Uninsured, under 65","On Medicare","On Medicaid","Medicare beneficiaries","Medicare Advantage share"],
+ supply:"Orthopedic supply",sup:["Hospitals with orthopedic surgery","Surgery centers with orthopedic surgery","Medicare beneficiaries per orthopedic site","Traditional-Medicare orthopedic surgical discharges"],
+ insurers:"Medicare Advantage insurers, share of enrollment",plans:"Medicaid managed care plans",hospitals:"Hospitals, by Medicare orthopedic surgical discharges",ascs:"Surgery centers flagged for orthopedics",centers:"centers",none:"None on file.",
+ zin:"Zoom in",zout:"Zoom out",map:"Map of the 20 counties"},
+es:{title:"Atlas de condados de mayoría hispana",
+ intro:"Los 20 condados más poblados de EE. UU. donde los residentes hispanos son mayoría. Elija un indicador para colorear el mapa, acérquese a un grupo de condados y seleccione uno para ver su mezcla de pagadores y sus hospitales y centros de cirugía con ortopedia.",
+ colorBy:"Colorear condados por",sizeBy:"Tamaño de los círculos por",zoomTo:"Acercar a",hint:"Desplace o pellizque para acercar; arrastre para mover.",to:"a",low:"bajo",high:"alto",circle:"Área del círculo: ",
+ selected:"Condado seleccionado",ranks:(r,m,v)=>"Puesto "+r+" de 20 en "+m+" ("+v+").",county:(n,s)=>"Condado de "+n+", "+s,of:"de",
+ st:["Población","Proporción hispana","65 años o más","Ingreso mediano por hogar","Tasa de pobreza","Sin seguro, menores de 65","Con Medicare","Con Medicaid","Beneficiarios de Medicare","Participación de Medicare Advantage"],
+ supply:"Oferta ortopédica",sup:["Hospitales con cirugía ortopédica","Centros de cirugía con cirugía ortopédica","Beneficiarios de Medicare por sitio ortopédico","Altas quirúrgicas ortopédicas de Medicare tradicional"],
+ insurers:"Aseguradoras de Medicare Advantage, participación de afiliados",plans:"Planes de atención administrada de Medicaid",hospitals:"Hospitales, por altas quirúrgicas ortopédicas de Medicare",ascs:"Centros de cirugía registrados con ortopedia",centers:"centros",none:"Ninguno registrado.",
+ zin:"Acercar",zout:"Alejar",map:"Mapa de los 20 condados",
+ m_bps:"Beneficiarios de Medicare por sitio ortopédico",m_pps:"Residentes por sitio ortopédico",m_a100:"Centros de cirugía ortopédica por 100,000 residentes",m_benes:"Beneficiarios de Medicare",m_ma:"Participación de Medicare Advantage en Medicare",m_mcaid:"Residentes con Medicaid",m_mcare:"Residentes con Medicare",m_unins:"Sin seguro, menores de 65",m_o65:"Residentes de 65 años o más",m_hisp:"Proporción hispana de la población",m_inc:"Ingreso mediano por hogar",m_pov:"Tasa de pobreza",m_chg:"Cambio de población desde 2020",
+ n_bps:"Afiliados a Medicare divididos entre los hospitales y centros de cirugía con cirugía ortopédica. Un valor más alto significa más pacientes por sitio.",
+ n_pps:"Residentes totales divididos entre los hospitales y centros de cirugía con cirugía ortopédica. Un valor más alto significa menor oferta.",
+ n_a100:"Centros de cirugía que CMS registra con cirugía ortopédica, por cada 100,000 residentes.",
+ n_benes:"Personas inscritas en Medicare, julio de 2026.",n_ma:"Proporción de afiliados a Medicare inscritos en un plan privado Medicare Advantage.",
+ n_mcaid:"Proporción de todos los residentes con cobertura de Medicaid, 2024.",n_mcare:"Proporción de todos los residentes con cobertura de Medicare, encuesta de 2024.",
+ n_unins:"Proporción de residentes menores de 65 años sin seguro médico.",n_o65:"Proporción de residentes de 65 años o más.",
+ n_hisp:"Residentes hispanos o latinos como proporción del total, estimación de 2025.",n_inc:"Ingreso mediano por hogar, 2020 a 2024, en dólares de 2024.",
+ n_pov:"Proporción de residentes por debajo de la línea de pobreza.",n_chg:"Cambio de abril de 2020 a julio de 2025.",
+ s_pop:"Población",s_benes:"Beneficiarios de Medicare",s_sites:"Sitios ortopédicos",
+ "r_All":"Todos","r_California":"California","r_Texas and New Mexico":"Texas y Nuevo México","r_South Texas":"Sur de Texas","r_Florida":"Florida","r_Bronx":"Bronx","r_Yakima":"Yakima",
+ note1:"<b>Fuentes.</b> Census QuickFacts (estimaciones de población de 2025, Encuesta sobre la Comunidad Estadounidense 2020–2024); tablas de cobertura de la ACS de un año, 2024; inscripción mensual de Medicare de CMS (julio de 2026); inscripción en Medicare Advantage por condado y contrato de CMS (octubre de 2026); Hospital General Information de CMS; archivo Provider of Services de CMS (octubre de 2026); Medicare Inpatient Hospitals by Provider and Service de CMS; listas de planes de las agencias estatales de Medicaid.",
+ note2:"<b>Cómo leer los indicadores ortopédicos.</b> Un hospital cuenta como ortopédico si tuvo al menos 11 altas hospitalarias de Medicare tradicional en un grupo de procedimientos quirúrgicos ortopédicos, por lo que los volúmenes son un mínimo y son más bajos donde Medicare Advantage es más alto. Un centro de cirugía cuenta si el registro de certificación de CMS indica cirugía ortopédica, dato que puede estar desactualizado. No se incluyen los hospitales militares ni los de Asuntos de Veteranos (VA). Las participaciones de las aseguradoras agrupan las entidades legales de CMS por nombre de la matriz y son aproximadas.",
+ note3:"Los círculos se ubican en el principal centro de población de cada condado, no en su centro geográfico."}};
+METRICS.forEach(m=>{L.en["m_"+m.k]=m.l;L.en["n_"+m.k]=m.note;});SIZES.forEach(x=>L.en["s_"+x.k]=x.l);REGIONS.forEach(x=>L.en["r_"+x.l]=x.l);
+document.querySelectorAll("[data-i18n]").forEach(el=>{const key=el.dataset.i18n;if(!(key in L.en))L.en[key]=el.innerHTML;});
+let lang="en";const t=key=>(key in L[lang])?L[lang][key]:L.en[key];const ML=()=>t("m_"+metric.k);
+const tr=x=>lang==="es"?x.replace("(partial list)","(lista parcial)").replace("Not confirmed","Sin confirmar").replace("(two sites)","(dos sedes)"):x;
+
 let metric=METRICS[0],sizeK="pop",sel=3,k=1;
 const W=960,H=560,svg=d3.select("#map"),g=svg.append("g");
 const proj=d3.geoAlbersUsa().scale(1180).translate([W/2,H/2]);
@@ -235,13 +271,13 @@ const ramp=["--r1","--r2","--r3","--r4","--r5"];
 let qs;function bucket(v){return qs(v);}
 const dots=g.append("g"),labels=g.append("g");
 const dot=dots.selectAll("circle").data(C).join("circle").attr("class","dot").attr("cx",d=>d.x).attr("cy",d=>d.y)
-  .attr("tabindex",0).attr("role","button").attr("aria-label",d=>d.n+" County, "+d.s)
+  .attr("tabindex",0).attr("role","button").attr("aria-label",d=>d.n+", "+d.s)
   .on("click",(e,d)=>pick(d.id)).on("keydown",(e,d)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick(d.id);}})
   .on("pointermove",(e,d)=>showTip(e,d)).on("pointerleave",()=>{tip.hidden=true;hover=null;restyle();});
 const lbl=labels.selectAll("text").data(C).join("text").attr("class","lbl").text(d=>d.n);
 const tip=document.getElementById("tip");let hover=null;
 function showTip(e,d){hover=d.id;restyle();const r=document.querySelector(".mapbox").getBoundingClientRect();
-  tip.innerHTML="<b>"+d.n+", "+d.s+"</b>"+metric.l+": "+metric.f(d[metric.k]);tip.hidden=false;
+  tip.innerHTML="<b>"+d.n+", "+d.s+"</b>"+ML()+": "+metric.f(d[metric.k]);tip.hidden=false;
   let x=e.clientX-r.left+14,y=e.clientY-r.top+14;if(x>r.width-230)x=Math.max(8,x-250);tip.style.left=x+"px";tip.style.top=y+"px";}
 
 let rs;
@@ -256,11 +292,11 @@ function render(){
   rs=d3.scaleSqrt().domain([0,d3.max(C,d=>d[sizeK])]).range([4,26]);
   dot.sort((a,b)=>b[sizeK]-a[sizeK]);restyle();
   const th=qs.thresholds(),ex=d3.extent(vals);
-  document.getElementById("legTitle").textContent=metric.l+": "+metric.f(ex[0])+" to "+metric.f(ex[1]);
-  document.getElementById("legSteps").innerHTML="low "+ramp.map(r=>'<i style="background:var('+r+')"></i>').join("")+" high";
-  document.getElementById("legSize").textContent="Circle area: "+SIZES.find(s=>s.k===sizeK).l.toLowerCase();
-  document.getElementById("rankTitle").textContent=metric.l;
-  document.getElementById("rankSub").textContent=metric.note;
+  document.getElementById("legTitle").textContent=ML()+": "+metric.f(ex[0])+" "+t("to")+" "+metric.f(ex[1]);
+  document.getElementById("legSteps").innerHTML=t("low")+" "+ramp.map(r=>'<i style="background:var('+r+')"></i>').join("")+" "+t("high");
+  document.getElementById("legSize").textContent=t("circle")+t("s_"+sizeK).toLowerCase();
+  document.getElementById("rankTitle").textContent=ML();
+  document.getElementById("rankSub").textContent=t("n_"+metric.k);
   const mx=d3.max(vals.map(Math.abs)),sorted=[...C].sort((a,b)=>b[metric.k]-a[metric.k]);
   const rk=d3.select("#rank").selectAll("button").data(sorted,d=>d.id).join("button").attr("class","row").attr("id",d=>"row"+d.id).order()
     .classed("sel",d=>d.id===sel).on("click",(e,d)=>pick(d.id,true));
@@ -269,16 +305,16 @@ function render(){
 }
 function detail(){
   const d=C[sel],rank=[...C].sort((a,b)=>b[metric.k]-a[metric.k]).findIndex(x=>x.id===sel)+1;
-  const st=[["Population",num(d.pop)],["Hispanic share",pct(d.hisp)],["65 and older",pct(d.o65)],["Median household income",usd(d.inc)],["Poverty rate",pct(d.pov)],["Uninsured, under 65",pct(d.unins)],["On Medicare",pct(d.mcare)],["On Medicaid",pct(d.mcaid)],["Medicare beneficiaries",num(d.benes)],["Medicare Advantage share",d.ma+"%"]];
-  const sup=[["Hospitals with orthopedic surgery",d.oh+" of "+d.hosp],["Surgery centers with orthopedic surgery",d.oa+" of "+d.asc],["Medicare beneficiaries per orthopedic site",k0(d.bps)],["Traditional-Medicare orthopedic surgical discharges",num(d.ffs)]];
-  const dl=a=>'<dl class="stats">'+a.map(x=>"<div><dt>"+x[0]+"</dt><dd>"+x[1]+"</dd></div>").join("")+"</dl>";
+  const sv=[num(d.pop),pct(d.hisp),pct(d.o65),usd(d.inc),pct(d.pov),pct(d.unins),pct(d.mcare),pct(d.mcaid),num(d.benes),d.ma+"%"];
+  const pv=[d.oh+" "+t("of")+" "+d.hosp,d.oa+" "+t("of")+" "+d.asc,k0(d.bps),num(d.ffs)];
+  const dl=(lab,val)=>'<dl class="stats">'+lab.map((x,i)=>"<div><dt>"+x+"</dt><dd>"+val[i]+"</dd></div>").join("")+"</dl>";
   document.getElementById("detail").innerHTML=
-   '<div><span class="eyebrow">Selected county</span><h2>'+d.n+" County, "+d.s+'</h2><p class="sub" style="margin:0">Ranks '+rank+" of 20 on "+metric.l.toLowerCase()+" ("+metric.f(d[metric.k])+").</p></div>"+dl(st)+
-   '<div class="sec"><span class="eyebrow">Orthopedic supply</span>'+dl(sup)+"</div>"+
-   '<div class="sec"><span class="eyebrow">Medicare Advantage insurers, share of enrollment</span>'+d.ins.map(x=>'<div class="ins"><span>'+x[0]+'</span><span><span class="bar" style="display:block;width:'+x[1]/68*100+'%"></span></span><span class="v">'+x[1]+"%</span></div>").join("")+"</div>"+
-   '<div class="sec"><span class="eyebrow">Medicaid managed care plans</span><div>'+d.mcd+"</div></div>"+
-   '<div class="sec"><span class="eyebrow">Hospitals, by Medicare orthopedic surgical discharges</span><ul class="plain">'+d.H.map(x=>"<li><span>"+x[0]+"</span><span>"+num(x[1])+"</span></li>").join("")+"</ul></div>"+
-   '<div class="sec"><span class="eyebrow">Surgery centers flagged for orthopedics</span>'+(d.A.length?'<details id="ascd"'+(d.A.length<=6?" open":"")+"><summary>"+d.oa+' centers</summary><ul class="plain" style="margin-top:6px">'+d.A.map(x=>"<li><span>"+x+"</span></li>").join("")+"</ul></details>":"<div>None on file.</div>")+"</div>";
+   '<div><span class="eyebrow">'+t("selected")+'</span><h2>'+t("county")(d.n,d.s)+'</h2><p class="sub" style="margin:0">'+t("ranks")(rank,ML().toLowerCase(),metric.f(d[metric.k]))+"</p></div>"+dl(t("st"),sv)+
+   '<div class="sec"><span class="eyebrow">'+t("supply")+'</span>'+dl(t("sup"),pv)+"</div>"+
+   '<div class="sec"><span class="eyebrow">'+t("insurers")+'</span>'+d.ins.map(x=>'<div class="ins"><span>'+x[0]+'</span><span><span class="bar" style="display:block;width:'+x[1]/68*100+'%"></span></span><span class="v">'+x[1]+"%</span></div>").join("")+"</div>"+
+   '<div class="sec"><span class="eyebrow">'+t("plans")+'</span><div>'+tr(d.mcd)+"</div></div>"+
+   '<div class="sec"><span class="eyebrow">'+t("hospitals")+'</span><ul class="plain">'+d.H.map(x=>"<li><span>"+x[0]+"</span><span>"+num(x[1])+"</span></li>").join("")+"</ul></div>"+
+   '<div class="sec"><span class="eyebrow">'+t("ascs")+'</span>'+(d.A.length?'<details id="ascd"'+(d.A.length<=6?" open":"")+"><summary>"+d.oa+" "+t("centers")+'</summary><ul class="plain" style="margin-top:6px">'+d.A.map(x=>"<li><span>"+tr(x)+"</span></li>").join("")+"</ul></details>":"<div>"+t("none")+"</div>")+"</div>";
 }
 function pick(id,fly){sel=id;restyle();d3.selectAll("#rank .row").classed("sel",d=>d.id===sel);detail();
   if(fly){const d=C[id];svg.transition().duration(600).call(zoom.transform,d3.zoomIdentity.translate(W/2,H/2).scale(Math.max(k,5)).translate(-d.x,-d.y));}}
@@ -291,11 +327,20 @@ document.getElementById("zout").onclick=()=>svg.transition().duration(250).call(
 function region(b){if(!b){svg.transition().duration(600).call(zoom.transform,d3.zoomIdentity);return;}
   const a=proj(b[0]),c=proj(b[1]);if(!a||!c)return;const dx=Math.abs(c[0]-a[0]),dy=Math.abs(c[1]-a[1]),s=Math.min(60,0.9/Math.max(dx/W,dy/H));
   svg.transition().duration(700).call(zoom.transform,d3.zoomIdentity.translate(W/2,H/2).scale(s).translate(-(a[0]+c[0])/2,-(a[1]+c[1])/2));}
-d3.select("#regions").selectAll("button").data(REGIONS).join("button").text(d=>d.l).on("click",(e,d)=>region(d.b));
+const regBtn=d3.select("#regions").selectAll("button").data(REGIONS).join("button").on("click",(e,d)=>region(d.b));
 const ms=document.getElementById("metric"),ss=document.getElementById("size");
-METRICS.forEach((m,i)=>ms.add(new Option(m.l,i)));SIZES.forEach(s=>ss.add(new Option(s.l,s.k)));
+function fillSelects(){const mv=ms.value||"0",sv=ss.value||"pop";ms.length=0;ss.length=0;METRICS.forEach((m,i)=>ms.add(new Option(t("m_"+m.k),i)));SIZES.forEach(x=>ss.add(new Option(t("s_"+x.k),x.k)));ms.value=mv;ss.value=sv;}
 ms.onchange=()=>{metric=METRICS[+ms.value];render();};ss.onchange=()=>{sizeK=ss.value;render();};
-render();
+function setLang(l,save){lang=L[l]?l:"en";document.documentElement.lang=lang;document.title=t("title");
+  document.querySelectorAll("[data-i18n]").forEach(el=>{el.innerHTML=t(el.dataset.i18n);});
+  document.getElementById("lang-en").setAttribute("aria-pressed",lang==="en");document.getElementById("lang-es").setAttribute("aria-pressed",lang==="es");
+  document.getElementById("zin").setAttribute("aria-label",t("zin"));document.getElementById("zout").setAttribute("aria-label",t("zout"));
+  svg.attr("aria-label",t("map"));dot.attr("aria-label",d=>t("county")(d.n,d.s));regBtn.text(d=>t("r_"+d.l));fillSelects();render();
+  if(save){try{localStorage.setItem("atlas-lang",lang);}catch(e){}}}
+document.getElementById("lang-en").onclick=()=>setLang("en",true);document.getElementById("lang-es").onclick=()=>setLang("es",true);
+let startLang=(navigator.language||"en").toLowerCase().startsWith("es")?"es":"en";
+try{const sv=localStorage.getItem("atlas-lang");if(sv)startLang=sv;}catch(e){}
+setLang(startLang,false);
 </script>
 
 </body>
